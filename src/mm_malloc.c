@@ -11,11 +11,13 @@ void *my_malloc(size_t size) {
         block_meta *current = list; 
 
         while (current != NULL)
-        {
-            current = current->next;
+        {        
+            if(current != NULL && current->free == 1 && current->size >= size){
 
-            if(current != NULL && current->free && current->size >= size)
-                return current + sizeof(block_meta);
+                 return current + 1; 
+            }
+
+            current = current->next;
         }      
     }
 
@@ -48,9 +50,20 @@ void *my_malloc(size_t size) {
 }
 
 void my_free(void *ptr) {
-    // TODO: Marcar el bloque como libre.
-    // TODO: Fusionar bloques adyacentes (Coalescing).
-    (void)ptr;
+
+    if(ptr == NULL) return;
+
+    block_meta *ptr_aux = ptr;
+    block_meta *neighbor = ptr_aux->next;
+
+    if((ptr_aux + 1 == neighbor) && neighbor->free){
+
+        ptr_aux->size = ptr_aux->size + neighbor->size;
+        ptr_aux->next = neighbor->next;
+    }
+
+    block_meta* res = ptr_aux - 1;
+    res->free = 1;
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
@@ -65,14 +78,4 @@ void *my_realloc(void *ptr, size_t size) {
     (void)ptr;
     (void)size;
     return NULL;
-}
-
-int main(){
-
-    my_malloc(50);
-    my_malloc(100);
-    my_malloc(70);
-    my_malloc(20);
-
-    return 0;
 }
