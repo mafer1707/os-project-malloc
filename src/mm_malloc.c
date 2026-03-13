@@ -1,5 +1,5 @@
 #include <unistd.h> // Para sbrk
-#include <string.h> // Para memset
+#include <string.h> // Para memset y memcpy
 #include "../include/mm_malloc.h"
 
 // Inicio de la lista enlazada del heap
@@ -78,8 +78,30 @@ void *my_calloc(size_t nmemb, size_t size) {
 }
 
 void *my_realloc(void *ptr, size_t size) {
-    // TODO: Redimensionar el bloque o moverlo a uno nuevo.
-    (void)ptr;
-    (void)size;
-    return NULL;
+   
+    if(ptr == NULL)
+        return my_malloc(size);
+    
+    if(size == 0){
+        my_free(ptr);
+        return NULL;
+    }
+
+    block_meta *ptr_aux = ptr - sizeof(block_meta);
+    void *new_ptr;
+
+    if(size < ptr_aux->size){
+        return ptr;
+    }
+    else if(size > ptr_aux->size){
+
+        new_ptr = my_malloc(size);
+
+        if(new_ptr == NULL) return NULL;
+
+        memcpy(ptr,new_ptr,ptr_aux->size);
+        my_free(ptr);
+    }
+
+    return new_ptr;
 }
