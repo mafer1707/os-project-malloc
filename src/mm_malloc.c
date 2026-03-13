@@ -53,17 +53,16 @@ void my_free(void *ptr) {
 
     if(ptr == NULL) return;
 
-    block_meta *ptr_aux = ptr;
+    block_meta *ptr_aux = ptr - sizeof(block_meta);
     block_meta *neighbor = ptr_aux->next;
 
-    if((ptr_aux + 1 == neighbor) && neighbor->free){
+    if((((char*)ptr_aux + sizeof(block_meta) + ptr_aux->size) == (char*)neighbor) && neighbor->free){
 
-        ptr_aux->size = ptr_aux->size + neighbor->size;
+        ptr_aux->size = ptr_aux->size + neighbor->size + sizeof(block_meta);
         ptr_aux->next = neighbor->next;
     }
 
-    block_meta* res = ptr_aux - 1;
-    res->free = 1;
+    ptr_aux->free = 1;
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
