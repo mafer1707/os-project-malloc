@@ -1,4 +1,5 @@
 #include <unistd.h> // Para sbrk
+#include <string.h> // Para memset
 #include "../include/mm_malloc.h"
 
 // Inicio de la lista enlazada del heap
@@ -66,10 +67,14 @@ void my_free(void *ptr) {
 }
 
 void *my_calloc(size_t nmemb, size_t size) {
-    // TODO: Usar my_malloc y luego memset a 0.
-    (void)nmemb;
-    (void)size;
-    return NULL;
+
+    void *ptr = my_malloc(nmemb * size);
+
+    if(ptr == NULL) return NULL;
+
+    memset(ptr, 0, nmemb * size);
+
+    return ptr;
 }
 
 void *my_realloc(void *ptr, size_t size) {
