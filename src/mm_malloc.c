@@ -7,6 +7,10 @@ block_meta *list = NULL;
 
 void *my_malloc(size_t size) {
 
+    if (size == 0) {
+        return NULL;
+    }
+
     if(list != NULL){
 
         block_meta *current = list; 
