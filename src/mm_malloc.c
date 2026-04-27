@@ -11,14 +11,36 @@ void *my_malloc(size_t size) {
         return NULL;
     }
 
+    //Alineación (Código tomado de Gemini)
+
+    //Explicación: esta alineación se usa para redondear el size que no sea multiplo de 8
+    //al múltiplo de 8 más cercano. 
+    //Ejemplo: un size de 5 lo convertiría a 8. Un size de 13 a 16.
+
+    //Esto es necesario para que la información se guarde en bloques de a 8 bytes cada uno y sea más
+    //fácil para el computador leer los datos.
+
+    //size + (alignment - 1) hace que el size cruce/supere al primer multiplo de 8 superior a él.
+    //~(alignment - 1) le aplica una negación al binario del número que se forma en la resta. En este caso ~7 
+
+    //(size + (alignment - 1)) & ~(alignment - 1) aplica un AND a estos dos números a nivel binario.
+    //De este modo logra que el size sea múltiplo de 8 ya que esta operación hace que el resultado siempre termine en tres ceros
+    //lo cual es lo que queremos porque cualquier múltiplo de 8 (8, 16, 24, 32...) en binario siempre termina en tres ceros (000).
+
+    size_t alignment = 8;
+    size = (size + (alignment - 1)) & ~(alignment - 1);
+
+    //
+
     if(list != NULL){
 
         block_meta *current = list; 
 
         while (current != NULL)
         {        
-            if(current != NULL && current->free == 1 && current->size >= size){
+            if(current->free == 1 && current->size >= size){
 
+                 current->free = 0;
                  return current + 1; 
             }
 
@@ -26,7 +48,12 @@ void *my_malloc(size_t size) {
         }      
     }
 
-    block_meta *ptr = sbrk(size + sizeof(block_meta));
+    block_meta *ptr = (block_meta*) sbrk(size + sizeof(block_meta));
+
+    if (ptr == (void *)-1) {
+        return NULL; 
+    }
+
     ptr->free = 0;
     ptr->next = NULL;
     ptr->size = size;
@@ -58,10 +85,10 @@ void my_free(void *ptr) {
 
     if(ptr == NULL) return;
 
-    block_meta *ptr_aux = ptr - sizeof(block_meta);
+    block_meta *ptr_aux = (block_meta*)ptr - 1;
     block_meta *neighbor = ptr_aux->next;
 
-    if((((char*)ptr_aux + sizeof(block_meta) + ptr_aux->size) == (char*)neighbor) && neighbor->free){
+    if(neighbor != NULL && neighbor->free && (((char*)ptr_aux + sizeof(block_meta) + ptr_aux->size) == (char*)neighbor)){
 
         ptr_aux->size = ptr_aux->size + neighbor->size + sizeof(block_meta);
         ptr_aux->next = neighbor->next;
@@ -91,19 +118,22 @@ void *my_realloc(void *ptr, size_t size) {
         return NULL;
     }
 
-    block_meta *ptr_aux = ptr - sizeof(block_meta);
+    size_t alignment = 8;
+    size = (size + (alignment - 1)) & ~(alignment - 1);
+
+    block_meta *ptr_aux = (block_meta*)ptr - 1;
     void *new_ptr;
 
-    if(size < ptr_aux->size){
+    if(size <= ptr_aux->size){
         return ptr;
     }
-    else if(size > ptr_aux->size){
+    else {
 
         new_ptr = my_malloc(size);
 
         if(new_ptr == NULL) return NULL;
 
-        memcpy(ptr,new_ptr,ptr_aux->size);
+        memcpy(new_ptr, ptr, ptr_aux->size);
         my_free(ptr);
     }
 
